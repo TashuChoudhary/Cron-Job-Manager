@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CronJob Manager - Analytics Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="animations.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+</head>
+<body>
+    <div class="container">
+        <div id="edit-modal" class="modal">
+        </div>
+
+    <script src="dashboard.js"></script>
+        <!-- Header -->
+        <div class="header glassmorphism">
+            <div class="header-left">
+                <h1>
+                    <i class="fas fa-chart-line"></i>
+                    CronJob Manager 
+                </h1>
+                <p>Advanced monitoring & analytics dashboard</p>
+            </div>
+            <div class="header-right">
+                <div id="connection-status" class="connection-status status-connecting">
+                    <div class="pulse-dot"></div>
+                    <span>Connecting...</span>
+                </div>
+                <button class="btn btn-sm" onclick="exportReport()">
+                    <i class="fas fa-download"></i>
+                    Export Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="overview">
+                <i class="fas fa-tachometer-alt"></i>
+                Overview
+            </button>
+            <button class="tab-btn" data-tab="jobs">
+                <i class="fas fa-tasks"></i>
+                Jobs Manager
+            </button>
+            <button class="tab-btn" data-tab="performance">
+                <i class="fas fa-chart-bar"></i>
+                Performance
+            </button>
+            <button class="tab-btn" data-tab="analytics">
+                <i class="fas fa-chart-line"></i>
+                Analytics
+            </button>
+            <button class="tab-btn" data-tab="monitoring">
+                <i class="fas fa-desktop"></i>
+                Live Monitoring
+            </button>
+            <button class="tab-btn" data-tab="notifications">
+                <i class="fas fa-bell"></i>
+                Notifications
+            </button>
+            <button class="tab-btn" data-tab="system-health">
+                <i class="fas fa-heartbeat"></i>
+                System Health
+            </button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2);">
+                            <i class="fas fa-tasks" style="color: #3b82f6;"></i>
+                        </div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+12%</span>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="total-jobs">24</div>
+                    <div class="stat-label">Total Jobs</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 75%; background: #3b82f6;"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background: rgba(16, 172, 132, 0.2);">
+                            <i class="fas fa-check-circle" style="color: #10ac84;"></i>
+                        </div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+5%</span>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="success-rate">96.8%</div>
+                    <div class="stat-label">Success Rate</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 96.8%; background: #10ac84;"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background: rgba(254, 202, 87, 0.2);">
+                            <i class="fas fa-play" style="color: #feca57;"></i>
+                        </div>
+                        <div class="stat-trend trend-up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>+24%</span>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="running-jobs">3</div>
+                    <div class="stat-label">Running Now</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 45%; background: #feca57;"></div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background: rgba(139, 69, 19, 0.2);">
+                            <i class="fas fa-clock" style="color: #8b4513;"></i>
+                        </div>
+                        <div class="stat-trend trend-down">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>-8%</span>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="avg-execution">2.4s</div>
+                    <div class="stat-label">Avg Execution Time</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 60%; background: #8b4513;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Execution Timeline</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active">24H</button>
+                            <button class="chart-btn">7D</button>
+                            <button class="chart-btn">30D</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="executionChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Success vs Failure Rate</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item">
+                                <span class="legend-color" style="background: #10ac84;"></span>
+                                Success
+                            </span>
+                            <span class="legend-item">
+                                <span class="legend-color" style="background: #ee5a24;"></span>
+                                Failed
+                            </span>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="successChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Performance by Category</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-broadcast-tower"></i>
+                        Live Activity Feed
+                    </div>
+                    <div id="activity-feed" class="activity-feed">
+                        <div class="activity-item info">
+                            <span class="activity-time">Waiting for events...</span>
+                            <div class="activity-message">Connect to see real-time updates</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs Manager Tab -->
+        <div id="jobs" class="tab-content">
+            <div class="jobs-layout">
+                <!-- Jobs List -->
+                <div class="jobs-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-list"></i> Scheduled Jobs</h2>
+                        <div class="job-filters">
+                            <input type="text" id="job-search" placeholder="Search jobs..." class="search-input">
+                            <select id="category-filter" class="filter-select">
+                                <option value="">All Categories</option>
+                                <option value="backup">Backup</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="api">API</option>
+                                <option value="monitoring">Monitoring</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="jobs-container" class="jobs-grid">
+                        <div class="loading">Loading jobs...</div>
+                    </div>
+                </div>
+
+                <!-- Add Job Form -->
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-plus-circle"></i>
+                        Create New Job
+                    </div>
+                    <form id="job-form">
+                        <div class="form-group">
+                            <label for="job-name">Job Name *</label>
+                            <input type="text" id="job-name" placeholder="Enter job name..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="job-description">Description</label>
+                            <textarea id="job-description" rows="2" placeholder="Brief description..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="job-category">Category</label>
+                            <select id="job-category">
+                                <option value="backup">Backup</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="api">API</option>
+                                <option value="monitoring">Monitoring</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="job-cron">Cron Expression *</label>
+                            <input type="text" id="job-cron" placeholder="*/30 * * * * *" required>
+                            <small class="form-help">
+                                Examples: <code>*/30 * * * * *</code> (every 30s), <code>0 0 9 * * *</code> (daily 9am)
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="job-command">Command *</label>
+                            <textarea id="job-command" rows="3" placeholder='echo "Hello from $(date)"' required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="job-active" checked>
+                                <span class="checkmark"></span>
+                                Active
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            Create Job
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Tab -->
+        <div id="performance" class="tab-content">
+            <div class="performance-grid">
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-trophy"></i>
+                        Top Performers
+                    </div>
+                    <div id="top-performers" class="performance-list">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Performance Issues
+                    </div>
+                    <div id="slow-performers" class="performance-list">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Resource Usage
+                    </div>
+                    <div id="resource-usage" class="performance-list">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Execution Time Distribution</h3>
+                    <div class="chart-controls">
+                        <button class="chart-btn active">All Jobs</button>
+                        <button class="chart-btn">Backup</button>
+                        <button class="chart-btn">Maintenance</button>
+                        <button class="chart-btn">API</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Execution Trends (7 Days)</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn">Hour</button>
+                            <button class="chart-btn active">Day</button>
+                            <button class="chart-btn">Week</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="trendsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Job Category Analysis</h3>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="categoryAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">Error Rate Analysis</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active">Daily</button>
+                            <button class="chart-btn">Weekly</button>
+                            <button class="chart-btn">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="errorChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-bell"></i>
+                        Smart Alerts
+                    </div>
+                    <div class="alert-config">
+                        <div class="form-group">
+                            <label for="execution-threshold">Execution Time Alert</label>
+                            <div class="slider-group">
+                                <input type="range" id="execution-threshold" min="1" max="60" value="30">
+                                <span class="slider-value" id="exec-value">30s</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="failure-threshold">Failure Rate Alert</label>
+                            <div class="slider-group">
+                                <input type="range" id="failure-threshold" min="1" max="50" value="10">
+                                <span class="slider-value" id="fail-value">10%</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-success">
+                            <i class="fas fa-save"></i>
+                            Save Alert Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Monitoring Tab -->
+        <div id="monitoring" class="tab-content">
+            <div class="monitoring-grid">
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-eye"></i>
+                        Real-time Job Status
+                    </div>
+                    <div id="real-time-jobs" class="realtime-list">
+                        
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-redo"></i>
+                        Retry Progress
+                    </div>
+                    <div id="retry-progress" class="retry-list">
+                       
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">System Resources (Real-time)</h3>
+                    <div class="chart-controls">
+                        <button class="chart-btn active">CPU</button>
+                        <button class="chart-btn">Memory</button>
+                        <button class="chart-btn">Disk</button>
+                        <button class="chart-btn">Network</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="resourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Tab - NEW FEATURE -->
+        <div id="notifications" class="tab-content">
+            <div class="notifications-grid">
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-envelope"></i>
+                        Email Notifications
+                    </div>
+                    <form class="notification-form">
+                        <div class="form-group">
+                            <label for="email-address">Email Address</label>
+                            <input type="email" id="email-address" placeholder="admin@company.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="email-failures" checked>
+                                <span class="checkmark"></span>
+                                Notify on job failures
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="email-successes">
+                                <span class="checkmark"></span>
+                                Notify on job successes
+                            </label>
+                        </div>
+                        <button type="button" class="btn btn-primary">Save Email Settings</button>
+                    </form>
+                </div>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fab fa-slack"></i>
+                        Slack Integration
+                    </div>
+                    <form class="notification-form">
+                        <div class="form-group">
+                            <label for="slack-webhook">Slack Webhook URL</label>
+                            <input type="url" id="slack-webhook" placeholder="https://hooks.slack.com/...">
+                        </div>
+                        <div class="form-group">
+                            <label for="slack-channel">Channel</label>
+                            <input type="text" id="slack-channel" placeholder="#cronjobs">
+                        </div>
+                        <button type="button" class="btn btn-primary">Test Slack Connection</button>
+                    </form>
+                </div>
+
+              
+                <button class="btn btn-primary" onclick="window.location.href='workflow-builder.html'">
+                    <i class="fas fa-project-diagram"></i>
+                     Workflow Builder
+                </button>
+
+                <button class="btn btn-primary" onclick="window.location.href='logs-viewer.html'">
+                    <i class="fas fa-terminal"></i>
+                     View Logs
+                </button>
+
+                <div class="form-section">
+                    <div class="form-title">
+                        <i class="fas fa-webhook"></i>
+                        Custom Webhooks
+                    </div>
+                    <div id="webhook-list">
+                        <!-- Webhook configurations will be listed here -->
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="addWebhook()">
+                        <i class="fas fa-plus"></i>
+                        Add Webhook
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Job Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-edit"></i>
+                    Edit Job
+                </h3>
+                <button class="modal-close" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="edit-job-form">
+                <input type="hidden" id="edit-job-id">
+                <div class="form-group">
+                    <label for="edit-job-name">Job Name *</label>
+                    <input type="text" id="edit-job-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-job-description">Description</label>
+                    <textarea id="edit-job-description" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-job-cron">Cron Expression *</label>
+                    <input type="text" id="edit-job-cron" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-job-command">Command *</label>
+                    <textarea id="edit-job-command" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="edit-job-active">
+                        <span class="checkmark"></span>
+                        Active
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i>
+                        Update Job
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    
+                    
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

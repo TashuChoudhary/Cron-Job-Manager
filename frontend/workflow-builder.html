@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Builder - CronJob Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="animations.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --dark: #1e293b;
+            --dark-light: #334155;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--bg-card);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text; 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--dark-light);
+            color: var(--text-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        /* Main Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            height: calc(100vh - 80px);
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        /* Sidebar - Step Library */
+        .sidebar {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-category {
+            margin-bottom: 1.5rem;
+        }
+
+        .category-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .step-item {
+            background: var(--dark-light);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            cursor: grab;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .step-item:hover {
+            transform: translateX(5px);
+            border-left-color: var(--primary);
+            box-shadow: 0 5px 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .step-item:active {
+            cursor: grabbing;
+        }
+
+        .step-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-name {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: auto;
+            padding: 2rem;
+        }
+
+        .canvas-header {
+            background: var(--dark-light);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .workflow-name-input {
+            background: var(--dark);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            width: 300px;
+        }
+
+        .workflow-name-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .canvas-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .canvas-controls button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .workflow-canvas {
+            min-height: 600px;
+            position: relative;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone.drag-over {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .dropzone i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .workflow-step {
+            background: var(--dark-light);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            transition: all 0.3s ease;
+            cursor: move;
+        }
+
+        .workflow-step:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .workflow-step.dragging {
+            opacity: 0.5;
+        }
+
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .step-info {
+            flex: 1;
+            margin-left: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+
+        .step-type {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .step-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .step-action-btn {
+            background: var(--dark);
+            border: none;
+            color: var(--text-light);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step-action-btn:hover {
+            background: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .step-action-btn.delete:hover {
+            background: var(--danger);
+        }
+
+        .step-content {
+            background: var(--dark);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .step-content input,
+        .step-content textarea,
+        .step-content select {
+            width: 100%;
+            background: var(--dark-light);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .step-content input:focus,
+        .step-content textarea:focus,
+        .step-content select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .step-content label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-light);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Connection Lines */
+        .step-connector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: -0.75rem 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .connector-line {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            position: relative;
+        }
+
+        .connector-line::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid var(--secondary);
+        }
+
+        /* Properties Panel */
+        .properties-panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .properties-panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .property-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .property-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+
+        .property-value {
+            background: var(--dark-light);
+            padding: 0.75rem;
+            border-radius: 6px;
+            color: var(--text-light);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .workflow-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-box {
+            background: var(--dark-light);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text; 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Execution Preview */
+        .execution-preview {
+            background: var(--dark-light);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .execution-step {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: var(--dark);
+            border-radius: 6px;
+            border-left: 3px solid var(--info);
+        }
+
+        .execution-step.completed {
+            border-left-color: var(--success);
+        }
+
+        .execution-step.error {
+            border-left-color: var(--danger);
+        }
+
+        .execution-icon {
+            font-size: 1.2rem;
+        }
+
+        .execution-text {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .execution-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .workflow-step {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .step-number {
+            animation: pulse 2s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar, .properties-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <h1>
+            <i class="fas fa-project-diagram"></i>
+            Visual Workflow Builder
+        </h1>
+        <div class="nav-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <button class="btn btn-success" onclick="testWorkflow()">
+                <i class="fas fa-play"></i> Test Workflow
+            </button>
+            <button class="btn btn-primary" onclick="saveWorkflow()">
+                <i class="fas fa-save"></i> Save Workflow
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Step Library Sidebar -->
+        <div class="sidebar">
+            <h2><i class="fas fa-puzzle-piece"></i> Step Library</h2>
+            
+            <div class="step-category">
+                <div class="category-title">Actions</div>
+                <div class="step-item" draggable="true" data-type="command" ondragstart="dragStart(event)">
+                    <div class="step-icon">💻</div>
+                    <div class="step-name">Run Command</div>
+                    <div class="step-desc">Execute shell command</div>
+                </div>
+                <div class="step-item" draggable="true" data-type="script" ondragstart="dragStart(event)">
+                    <div class="step-icon">📜</div>
+                    <div class="step-name">Run Script</div>
+                    <div class="step-desc">Execute custom script</div>
+                </div>
+                <div class="step-item" draggable="true" data-type="api" ondragstart="dragStart(event)">
+                    <div class="step-icon">🌐</div>
+                    <div class="step-name">API Call</div>
+                    <div class="step-desc">Make HTTP request</div>
+                </div>
+            </div>
+
+            <div class="step-category">
+                <div class="category-title">Data Operations</div>
+                <div class="step-item" draggable="true" data-type="database" ondragstart="dragStart(event)">
+                    <div class="step-icon">🗄️</div>
+                    <div class="step-name">Database Query</div>
+                    <div class="step-desc">Run SQL query</div>
+                </div>
+                <div class="step-item" draggable="true" data-type="file" ondragstart="dragStart(event)">
+                    <div class="step-icon">📁</div>
+                    <div class="step-name">File Operation</div>
+                    <div class="step-desc">Read/write files</div>
+                </div>
+            </div>
+
+            <div class="step-category">
+                <div class="category-title">Control Flow</div>
+                <div class="step-item" draggable="true" data-type="condition" ondragstart="dragStart(event)">
+                    <div class="step-icon">🔀</div>
+                    <div class="step-name">Condition</div>
+                    <div class="step-desc">If/else logic</div>
+                </div>
+                <div class="step-item" draggable="true" data-type="delay" ondragstart="dragStart(event)">
+                    <div class="step-icon">⏱️</div>
+                    <div class="step-name">Delay</div>
+                    <div class="step-desc">Wait for duration</div>
+                </div>
+            </div>
+
+            <div class="step-category">
+                <div class="category-title">Notifications</div>
+                <div class="step-item" draggable="true" data-type="email" ondragstart="dragStart(event)">
+                    <div class="step-icon">📧</div>
+                    <div class="step-name">Send Email</div>
+                    <div class="step-desc">Email notification</div>
+                </div>
+                <div class="step-item" draggable="true" data-type="slack" ondragstart="dragStart(event)">
+                    <div class="step-icon">💬</div>
+                    <div class="step-name">Slack Message</div>
+                    <div class="step-desc">Send to Slack</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-area">
+            <div class="canvas-header">
+                <input type="text" class="workflow-name-input" id="workflowName" placeholder="Untitled Workflow" value="My New Workflow">
+                <div class="canvas-controls">
+                    <button class="btn btn-secondary" onclick="clearWorkflow()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                    <button class="btn btn-secondary" onclick="zoomIn()">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="btn btn-secondary" onclick="zoomOut()">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="workflow-canvas" id="workflowCanvas" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <div class="dropzone" id="dropzone">
+                    <i class="fas fa-hand-pointer"></i>
+                    <h3>Drag & Drop Steps Here</h3>
+                    <p>Start building your workflow by dragging steps from the left sidebar</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="properties-panel">
+            <h2><i class="fas fa-cog"></i> Properties</h2>
+            
+            <div class="workflow-stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="stepCount">0</div>
+                    <div class="stat-label">Steps</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="estimatedTime">0s</div>
+                    <div class="stat-label">Est. Time</div>
+                </div>
+            </div>
+
+            <div class="property-section">
+                <div class="property-label">Workflow Name</div>
+                <div class="property-value" id="propWorkflowName">My New Workflow</div>
+            </div>
+
+            <div class="property-section">
+                <div class="property-label">Status</div>
+                <div class="property-value" id="propStatus">Draft</div>
+            </div>
+
+            <div class="property-section">
+                <div class="property-label">Created</div>
+                <div class="property-value" id="propCreated">Just now</div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem; font-size: 1rem;">
+                <i class="fas fa-play-circle"></i> Execution Preview
+            </h3>
+            <div class="execution-preview" id="executionPreview">
+                <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+                    Add steps to see execution preview
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let workflowSteps = [];
+        let stepCounter = 0;
+
+        // Drag and Drop Functions
+        function dragStart(event) {
+            event.dataTransfer.setData('stepType', event.target.dataset.type);
+            event.dataTransfer.setData('stepName', event.target.querySelector('.step-name').textContent);
+            event.dataTransfer.setData('stepIcon', event.target.querySelector('.step-icon').textContent);
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+            const dropzone = document.getElementById('dropzone');
+            if (dropzone) {
+                dropzone.classList.add('drag-over');
+            }
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            const dropzone = document.getElementById('dropzone');
+            if (dropzone) {
+                dropzone.classList.remove('drag-over');
+            }
+
+            const stepType = event.dataTransfer.getData('stepType');
+            const stepName = event.dataTransfer.getData('stepName');
+            const stepIcon = event.dataTransfer.getData('stepIcon');
+
+            addStep(stepType, stepName, stepIcon);
+        }
+
+        // Add Step to Canvas
+        function addStep(type, name, icon) {
+            stepCounter++;
+            const canvas = document.getElementById('workflowCanvas');
+            const dropzone = document.getElementById('dropzone');
+            
+            if (dropzone) {
+                dropzone.remove();
+            }
+
+            // Add connector if not first step
+            if (workflowSteps.length > 0) {
+                const connector = document.createElement('div');
+                connector.className = 'step-connector';
+                connector.innerHTML = '<div class="connector-line"></div>';
+                canvas.appendChild(connector);
+            }
+
+            const step = {
+                id: stepCounter,
+                type: type,
+                name: name,
+                icon: icon,
+                config: {}
+            };
+
+            workflowSteps.push(step);
+
+            const stepElement = createStepElement(step);
+            canvas.appendChild(stepElement);
+
+            updateProperties();
+        }
+
+        // Create Step Element
+        function createStepElement(step) {
+            const div = document.createElement('div');
+            div.className = 'workflow-step';
+            div.dataset.stepId = step.id;
+            div.draggable = true;
+
+            div.innerHTML = `
+                <div class="step-header">
+                    <div class="step-number">${step.id}</div>
+                    <div class="step-info">
+                        <div class="step-title">${step.icon} ${step.name}</div>
+                        <div class="step-type">Type: ${step.type}</div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="step-action-btn" onclick="editStep(${step.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="step-action-btn delete" onclick="deleteStep(${step.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="step-content">
+                    ${getStepConfigHTML(step.type, step.id)}
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Get Step Configuration HTML
+        function getStepConfigHTML(type, stepId) {
+            switch(type) {
+                case 'command':
+                    return `
+                        <label>Command</label>
+                        <input type="text" placeholder="e.g., ls -la" onchange="updateStepConfig(${stepId}, 'command', this.value)">
+                        <label>Working Directory</label>
+                        <input type="text" placeholder="/home/user" onchange="updateStepConfig(${stepId}, 'workdir', this.value)">
+                    `;
+                case 'script':
+                    return `
+                        <label>Script Path</label>
+                        <input type="text" placeholder="/path/to/script.sh" onchange="updateStepConfig(${stepId}, 'script', this.value)">
+                        <label>Arguments</label>
+                        <input type="text" placeholder="arg1 arg2" onchange="updateStepConfig(${stepId}, 'args', this.value)">
+                    `;
+                case 'api':
+                    return `
+                        <label>HTTP Method</label>
+                        <select onchange="updateStepConfig(${stepId}, 'method', this.value)">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                        </select>
+                        <label>URL</label>
+                        <input type="text" placeholder="https://api.example.com/endpoint" onchange="updateStepConfig(${stepId}, 'url', this.value)">
+                    `;
+                case 'database':
+                    return `
+                        <label>Query</label>
+                        <textarea rows="3" placeholder="SELECT * FROM users" onchange="updateStepConfig(${stepId}, 'query', this.value)"></textarea>
+                    `;
+                case 'file':
+                    return `
+                        <label>Operation</label>
+                        <select onchange="updateStepConfig(${stepId}, 'operation', this.value)">
+                            <option value="read">Read File</option>
+                            <option value="write">Write File</option>
+                            <option value="delete">Delete File</option>
+                        </select>
+                        <label>File Path</label>
+                        <input type="text" placeholder="/path/to/file.txt" onchange="updateStepConfig(${stepId}, 'path', this.value)">
+                    `;
+                case 'delay':
+                    return `
+                        <label>Duration (seconds)</label>
+                        <input type="number" min="1" value="5" onchange="updateStepConfig(${stepId}, 'duration', this.value)">
+                    `;
+                case 'email':
+                    return `
+                        <label>To</label>
+                        <input type="email" placeholder="user@example.com" onchange="updateStepConfig(${stepId}, 'to', this.value)">
+                        <label>Subject</label>
+                        <input type="text" placeholder="Email subject" onchange="updateStepConfig(${stepId}, 'subject', this.value)">
+                    `;
+                case 'slack':
+                    return `
+                        <label>Channel</label>
+                        <input type="text" placeholder="#general" onchange="updateStepConfig(${stepId}, 'channel', this.value)">
+                        <label>Message</label>
+                        <textarea rows="2" placeholder="Your message here" onchange="updateStepConfig(${stepId}, 'message', this.value)"></textarea>
+                    `;
+                case 'condition':
+                    return `
+                        <label>Condition</label>
+                        <input type="text" placeholder="variable == value" onchange="updateStepConfig(${stepId}, 'condition', this.value)">
+                        <label>True Action</label>
+                        <input type="text" placeholder="Continue to next step" onchange="updateStepConfig(${stepId}, 'trueAction', this.value)">
+                    `;
+                default:
+                    return `<label>Configuration</label><input type="text" placeholder="Enter configuration" onchange="updateStepConfig(${stepId}, 'config', this.value)">`;
+            }
+        }
+
+        // Update Step Configuration
+        function updateStepConfig(stepId, key, value) {
+            const step = workflowSteps.find(s => s.id === stepId);
+            if (step) {
+                step.config[key] = value;
+                updateProperties();
+            }
+        }
+
+        // Edit Step
+        function editStep(stepId) {
+            alert(`Editing step ${stepId}. Configuration is auto-saved as you type!`);
+        }
+
+        // Delete Step
+        function deleteStep(stepId) {
+            if (confirm('Are you sure you want to delete this step?')) {
+                workflowSteps = workflowSteps.filter(s => s.id !== stepId);
+                renderWorkflow();
+                updateProperties();
+            }
+        }
+
+        // Render Workflow
+        function renderWorkflow() {
+            const canvas = document.getElementById('workflowCanvas');
+            canvas.innerHTML = '';
+
+            if (workflowSteps.length === 0) {
+                canvas.innerHTML = `
+                    <div class="dropzone" id="dropzone">
+                        <i class="fas fa-hand-pointer"></i>
+                        <h3>Drag & Drop Steps Here</h3>
+                        <p>Start building your workflow by dragging steps from the left sidebar</p>
+                    </div>
+                `;
+                return;
+            }
+
+            workflowSteps.forEach((step, index) => {
+                if (index > 0) {
+                    const connector = document.createElement('div');
+                    connector.className = 'step-connector';
+                    connector.innerHTML = '<div class="connector-line"></div>';
+                    canvas.appendChild(connector);
+                }
+                canvas.appendChild(createStepElement(step));
+            });
+        }
+
+        // Update Properties Panel
+        function updateProperties() {
+            document.getElementById('stepCount').textContent = workflowSteps.length;
+            
+            // Estimate time (rough calculation)
+            const estimatedTime = workflowSteps.length * 2; // 2 seconds per step average
+            document.getElementById('estimatedTime').textContent = estimatedTime + 's';
+            
+            // Update workflow name in properties
+            const workflowName = document.getElementById('workflowName').value;
+            document.getElementById('propWorkflowName').textContent = workflowName;
+            
+            // Update execution preview
+            updateExecutionPreview();
+        }
+
+        // Update Execution Preview
+        function updateExecutionPreview() {
+            const preview = document.getElementById('executionPreview');
+            
+            if (workflowSteps.length === 0) {
+                preview.innerHTML = `
+                    <p style="color: var(--text-muted); text-align: center; padding: 2rem;">
+                        Add steps to see execution preview
+                    </p>
+                `;
+                return;
+            }
+
+            preview.innerHTML = workflowSteps.map((step, index) => `
+                <div class="execution-step">
+                    <div class="execution-icon">${step.icon}</div>
+                    <div class="execution-text">
+                        <strong>Step ${index + 1}:</strong> ${step.name}
+                    </div>
+                    <div class="execution-time">~${(index + 1) * 2}s</div>
+                </div>
+            `).join('');
+        }
+
+        // Clear Workflow
+        function clearWorkflow() {
+            if (workflowSteps.length === 0) {
+                alert('Workflow is already empty!');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to clear all steps?')) {
+                workflowSteps = [];
+                stepCounter = 0;
+                renderWorkflow();
+                updateProperties();
+            }
+        }
+
+        // Save Workflow
+        function saveWorkflow() {
+            const workflowName = document.getElementById('workflowName').value;
+            
+            if (workflowSteps.length === 0) {
+                alert('Please add at least one step to save the workflow!');
+                return;
+            }
+
+            const workflow = {
+                name: workflowName,
+                steps: workflowSteps,
+                created: new Date().toISOString()
+            };
+
+            // In real app, this would send to backend
+            console.log('Saving workflow:', workflow);
+            
+            // Simulate API call
+            alert(`✅ Workflow "${workflowName}" saved successfully!\n\nSteps: ${workflowSteps.length}\n\nYou can now execute this workflow from the dashboard.`);
+            
+            // You would normally do:
+            // fetch('/api/workflows', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(workflow)
+            // });
+        }
+
+        // Test Workflow
+        function testWorkflow() {
+            if (workflowSteps.length === 0) {
+                alert('Please add steps before testing!');
+                return;
+            }
+
+            const preview = document.getElementById('executionPreview');
+            preview.innerHTML = '';
+
+            let delay = 0;
+            workflowSteps.forEach((step, index) => {
+                setTimeout(() => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'execution-step';
+                    stepDiv.innerHTML = `
+                        <div class="execution-icon">${step.icon}</div>
+                        <div class="execution-text">
+                            <strong>Step ${index + 1}:</strong> ${step.name} - <span style="color: var(--info)">Running...</span>
+                        </div>
+                        <div class="execution-time">~${(index + 1) * 2}s</div>
+                    `;
+                    preview.appendChild(stepDiv);
+
+                    // Simulate completion
+                    setTimeout(() => {
+                        stepDiv.className = 'execution-step completed';
+                        stepDiv.innerHTML = `
+                            <div class="execution-icon">✓</div>
+                            <div class="execution-text">
+                                <strong>Step ${index + 1}:</strong> ${step.name} - <span style="color: var(--success)">Completed</span>
+                            </div>
+                            <div class="execution-time">${(Math.random() * 3 + 1).toFixed(2)}s</div>
+                        `;
+
+                        if (index === workflowSteps.length - 1) {
+                            setTimeout(() => {
+                                alert('✅ Workflow test completed successfully!');
+                            }, 500);
+                        }
+                    }, 2000);
+                }, delay);
+                delay += 2000;
+            });
+        }
+
+        // Zoom Functions
+        function zoomIn() {
+            alert('Zoom in feature - Coming soon!');
+        }
+
+        function zoomOut() {
+            alert('Zoom out feature - Coming soon!');
+        }
+
+        // Update workflow name in properties when changed
+        document.getElementById('workflowName').addEventListener('input', function() {
+            document.getElementById('propWorkflowName').textContent = this.value;
+        });
+
+        // Prevent default drag behavior on canvas
+        document.getElementById('workflowCanvas').addEventListener('dragleave', function() {
+            const dropzone = document.getElementById('dropzone');
+            if (dropzone) {
+                dropzone.classList.remove('drag-over');
+            }
+        });
+
+        // Initialize
+        window.onload = function() {
+            updateProperties();
+            console.log('🚀 Visual Workflow Builder initialized!');
+            console.log('Drag steps from the left sidebar to build your workflow');
+        };
+    </script>
+</body>
+</html>

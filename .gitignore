@@ -1,0 +1,121 @@
+# Environment 
+.env
+.env.local
+.env.production
+.env.*.local
+*.env
+
+# Backup files 
+backups/
+*.sql
+*.dump
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+main
+cron-job-manager
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+coverage.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs (GoLand, IntelliJ)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Operating Systems
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# Docker volumes 
+data/
+postgres-data/
+
+# Docker override files (for local dev)
+docker-compose.override.yml
+
+# Logs
+
+*.log
+logs/
+*.log.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts
+dist/
+build/
+bin/
+
+# Node.js 
+node_modules/
+yarn.lock
+.npm
+.yarn
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Air 
+tmp/
+.air.toml
+
+# Security
+*.pem
+*.key
+*.cert
+*.crt
+secrets/
+credentials/

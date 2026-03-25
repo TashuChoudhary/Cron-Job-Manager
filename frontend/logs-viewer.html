@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs Viewer - CronJob Manager</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="animations.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --dark: #0f172a;
+            --dark-light: #1e293b;
+            --dark-lighter: #334155;
+            --text-light: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark);
+            color: var(--text-light);
+            overflow: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--dark-light);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .navbar h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background-clip: text; 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--dark-lighter);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--dark-lighter);
+            color: var(--text-light);
+        }
+
+        .btn-secondary:hover {
+            background: var(--dark);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Main Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            height: calc(100vh - 80px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--dark-light);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .filter-input {
+            width: 100%;
+            background: var(--dark-lighter);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .log-level-filters {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--dark-lighter);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-checkbox:hover {
+            background: var(--dark);
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .filter-checkbox label {
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .level-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .level-info { background: rgba(6, 182, 212, 0.2); color: var(--info); }
+        .level-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .level-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .level-error { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .job-list {
+            margin-top: 1rem;
+        }
+
+        .job-item {
+            background: var(--dark-lighter);
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .job-item:hover {
+            background: var(--dark);
+            border-left-color: var(--primary);
+        }
+
+        .job-item.active {
+            border-left-color: var(--primary);
+            background: var(--dark);
+        }
+
+        .job-name {
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .job-time {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .content {
+            display: flex;
+            flex-direction: column;
+            background: var(--dark);
+        }
+
+        .toolbar {
+            background: var(--dark-light);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .toolbar-left {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            background: var(--dark-lighter);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            width: 300px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .log-stats {
+            display: flex;
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        /* Logs Container */
+        .logs-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            background: var(--dark-light);
+            border-radius: 6px;
+            border-left: 3px solid var(--border);
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .log-entry:hover {
+            background: var(--dark-lighter);
+            transform: translateX(5px);
+        }
+
+        .log-entry.info { border-left-color: var(--info); }
+        .log-entry.success { border-left-color: var(--success); }
+        .log-entry.warning { border-left-color: var(--warning); }
+        .log-entry.error { border-left-color: var(--danger); }
+
+        .log-header {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+
+        .log-timestamp {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .log-level {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .log-level.info { background: var(--info); color: white; }
+        .log-level.success { background: var(--success); color: white; }
+        .log-level.warning { background: var(--warning); color: white; }
+        .log-level.error { background: var(--danger); color: white; }
+
+        .log-source {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .log-message {
+            color: var(--text-light);
+            word-wrap: break-word;
+        }
+
+        .log-message .highlight {
+            background: rgba(245, 158, 11, 0.3);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+
+        /* Error Details */
+        .error-details {
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 6px;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .error-stack {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark-lighter);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Auto-scroll indicator */
+        .autoscroll-indicator {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+            display: none;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .autoscroll-indicator.show {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+
+            .search-box input {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <h1>
+            <i class="fas fa-terminal"></i>
+            Real-time Logs Viewer
+        </h1>
+        <div class="nav-actions">
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Live</span>
+            </div>
+            <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Filters -->
+        <div class="sidebar">
+            <h2><i class="fas fa-filter"></i> Filters</h2>
+            
+            <div class="filter-section">
+                <label class="filter-label">Log Levels</label>
+                <div class="log-level-filters">
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-info" checked onchange="applyFilters()">
+                        <label for="filter-info">Info</label>
+                        <span class="level-badge level-info">INFO</span>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-success" checked onchange="applyFilters()">
+                        <label for="filter-success">Success</label>
+                        <span class="level-badge level-success">SUCCESS</span>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-warning" checked onchange="applyFilters()">
+                        <label for="filter-warning">Warning</label>
+                        <span class="level-badge level-warning">WARNING</span>
+                    </div>
+                    <div class="filter-checkbox">
+                        <input type="checkbox" id="filter-error" checked onchange="applyFilters()">
+                        <label for="filter-error">Error</label>
+                        <span class="level-badge level-error">ERROR</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label class="filter-label">Time Range</label>
+                <select class="filter-input" onchange="filterByTime(this.value)">
+                    <option value="all">All Time</option>
+                    <option value="1h" selected>Last Hour</option>
+                    <option value="6h">Last 6 Hours</option>
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d">Last 7 Days</option>
+                </select>
+            </div>
+
+            <h2 style="margin-top: 2rem;"><i class="fas fa-tasks"></i> Jobs</h2>
+            <div class="job-list" id="jobList">
+                <div class="job-item active" onclick="selectJob(0)">
+                    <div class="job-name">All Jobs</div>
+                    <div class="job-time">Combined logs</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search logs..." onkeyup="searchLogs()">
+                    </div>
+                    <div class="log-stats">
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: var(--info);" id="infoCount">0</span>
+                            <span>Info</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: var(--warning);" id="warningCount">0</span>
+                            <span>Warning</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" style="color: var(--danger);" id="errorCount">0</span>
+                            <span>Errors</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-secondary" onclick="toggleAutoScroll()">
+                        <i class="fas fa-arrow-down" id="autoScrollIcon"></i>
+                        <span id="autoScrollText">Auto-scroll: ON</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportLogs()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                    <button class="btn btn-danger" onclick="clearLogs()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Logs Container -->
+            <div class="logs-container" id="logsContainer">
+                <div class="empty-state">
+                    <i class="fas fa-scroll"></i>
+                    <h3>Waiting for logs...</h3>
+                    <p>Logs will appear here in real-time</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-scroll Indicator -->
+    <div class="autoscroll-indicator" id="autoScrollIndicator">
+        <i class="fas fa-arrow-down"></i> New logs available
+    </div>
+
+    <script>
+        let logs = [];
+        let filteredLogs = [];
+        let autoScroll = true;
+        let selectedJobId = 0;
+
+        // Sample jobs for sidebar
+        const jobs = [
+            { id: 0, name: 'All Jobs', time: 'Combined logs' },
+            { id: 1, name: 'Database Backup', time: '5 mins ago' },
+            { id: 2, name: 'Email Reports', time: '12 mins ago' },
+            { id: 3, name: 'Data Sync', time: '25 mins ago' },
+            { id: 4, name: 'Log Cleanup', time: '1 hour ago' }
+        ];
+
+        // Sample log messages
+        const sampleMessages = {
+            info: [
+                'Starting job execution...',
+                'Connecting to database...',
+                'Fetching data from API...',
+                'Processing batch 1 of 10...',
+                'Successfully connected to server',
+                'Loading configuration file...',
+                'Initializing worker threads...'
+            ],
+            success: [
+                'Job completed successfully!',
+                'Database backup created',
+                'Email sent to 150 recipients',
+                'All files synchronized',
+                'Transaction committed successfully',
+                'Cache cleared successfully'
+            ],
+            warning: [
+                'High memory usage detected',
+                'Connection timeout, retrying...',
+                'Deprecated API endpoint used',
+                'Rate limit approaching',
+                'Disk space running low',
+                'Slow query detected (2.5s)'
+            ],
+            error: [
+                'Failed to connect to database',
+                'API request failed: 500 Internal Server Error',
+                'File not found: /var/log/app.log',
+                'Permission denied: Cannot write to directory',
+                'Timeout: Operation exceeded 30 seconds',
+                'Invalid JSON response from server'
+            ]
+        };
+
+        // Initialize
+        function init() {
+            loadJobs();
+            startLogStream();
+            updateStats();
+        }
+
+        // Load jobs into sidebar
+        function loadJobs() {
+            const jobList = document.getElementById('jobList');
+            jobList.innerHTML = jobs.map(job => `
+                <div class="job-item ${job.id === 0 ? 'active' : ''}" onclick="selectJob(${job.id})">
+                    <div class="job-name">${job.name}</div>
+                    <div class="job-time">${job.time}</div>
+                </div>
+            `).join('');
+        }
+
+        // Select job
+        function selectJob(jobId) {
+            selectedJobId = jobId;
+            document.querySelectorAll('.job-item').forEach((item, index) => {
+                item.classList.toggle('active', jobs[index].id === jobId);
+            });
+            applyFilters();
+        }
+
+        // Start log streaming
+        function startLogStream() {
+            // Simulate real-time logs
+            setInterval(() => {
+                const levels = ['info', 'success', 'warning', 'error'];
+                const weights = [50, 25, 15, 10]; // Probability weights
+                const level = weightedRandom(levels, weights);
+                
+                addLog(level, getRandomMessage(level), getRandomJob());
+            }, 2000); // New log every 2 seconds
+
+            // Add initial logs
+            for (let i = 0; i < 15; i++) {
+                const levels = ['info', 'success', 'warning', 'error'];
+                const level = levels[Math.floor(Math.random() * levels.length)];
+                setTimeout(() => {
+                    addLog(level, getRandomMessage(level), getRandomJob());
+                }, i * 100);
+            }
+        }
+
+        // Weighted random selection
+        function weightedRandom(items, weights) {
+            const total = weights.reduce((a, b) => a + b);
+            let random = Math.random() * total;
+            
+            for (let i = 0; i < items.length; i++) {
+                if (random < weights[i]) {
+                    return items[i];
+                }
+                random -= weights[i];
+            }
+            return items[0];
+        }
+
+        // Get random message
+        function getRandomMessage(level) {
+            const messages = sampleMessages[level];
+            return messages[Math.floor(Math.random() * messages.length)];
+        }
+
+        // Get random job
+        function getRandomJob() {
+            const jobIndex = Math.floor(Math.random() * (jobs.length - 1)) + 1;
+            return jobs[jobIndex].name;
+        }
+
+        // Add log entry
+        function addLog(level, message, source) {
+            const log = {
+                id: logs.length + 1,
+                timestamp: new Date(),
+                level: level,
+                message: message,
+                source: source,
+                jobId: jobs.findIndex(j => j.name === source)
+            };
+
+            logs.unshift(log); // Add to beginning
+            
+            // Keep only last 500 logs
+            if (logs.length > 500) {
+                logs = logs.slice(0, 500);
+            }
+
+            applyFilters();
+            updateStats();
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const container = document.getElementById('logsContainer');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Get active filters
+            const showInfo = document.getElementById('filter-info').checked;
+            const showSuccess = document.getElementById('filter-success').checked;
+            const showWarning = document.getElementById('filter-warning').checked;
+            const showError = document.getElementById('filter-error').checked;
+
+            // Filter logs
+            filteredLogs = logs.filter(log => {
+                // Level filter
+                if (log.level === 'info' && !showInfo) return false;
+                if (log.level === 'success' && !showSuccess) return false;
+                if (log.level === 'warning' && !showWarning) return false;
+                if (log.level === 'error' && !showError) return false;
+
+                // Job filter
+                if (selectedJobId !== 0 && log.jobId !== selectedJobId) return false;
+
+                // Search filter
+                if (searchTerm && !log.message.toLowerCase().includes(searchTerm)) return false;
+
+                return true;
+            });
+
+            renderLogs();
+        }
+
+        // Render logs
+        function renderLogs() {
+            const container = document.getElementById('logsContainer');
+            const searchTerm = document.getElementById('searchInput').value;
+
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No logs found</h3>
+                        <p>Try adjusting your filters</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const shouldScroll = autoScroll && (container.scrollTop + container.clientHeight >= container.scrollHeight - 100);
+
+            container.innerHTML = filteredLogs.map(log => {
+                let highlightedMessage = log.message;
+                if (searchTerm) {
+                    const regex = new RegExp(`(${searchTerm})`, 'gi');
+                    highlightedMessage = log.message.replace(regex, '<span class="highlight">$1</span>');
+                }
+
+                let errorDetails = '';
+                if (log.level === 'error') {
+                    errorDetails = `
+                        <div class="error-details">
+                            <strong>Error Details:</strong>
+                            <div class="error-stack">
+                                at processJob (worker.go:45)<br>
+                                at executeCommand (executor.go:123)<br>
+                                at handleRequest (handler.go:89)
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="log-entry ${log.level}">
+                        <div class="log-header">
+                            <span class="log-timestamp">${formatTime(log.timestamp)}</span>
+                            <span class="log-level ${log.level}">${log.level}</span>
+                            <span class="log-source">${log.source}</span>
+                        </div>
+                        <div class="log-message">${highlightedMessage}</div>
+                        ${errorDetails}
+                    </div>
+                `;
+            }).join('');
+
+            if (shouldScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // Format timestamp
+        function formatTime(date) {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            const ms = String(date.getMilliseconds()).padStart(3, '0');
+            return `${hours}:${minutes}:${seconds}.${ms}`;
+        }
+
+        // Update statistics
+        function updateStats() {
+            const infoCount = logs.filter(l => l.level === 'info').length;
+            const warningCount = logs.filter(l => l.level === 'warning').length;
+            const errorCount = logs.filter(l => l.level === 'error').length;
+
+            document.getElementById('infoCount').textContent = infoCount;
+            document.getElementById('warningCount').textContent = warningCount;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+
+        // Search logs
+        function searchLogs() {
+            applyFilters();
+        }
+
+        // Filter by time
+        function filterByTime(range) {
+            // In real app, this would filter logs by time range
+            console.log('Filtering by time range:', range);
+        }
+
+        // Toggle auto-scroll
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const text = document.getElementById('autoScrollText');
+            const icon = document.getElementById('autoScrollIcon');
+            
+            text.textContent = `Auto-scroll: ${autoScroll ? 'ON' : 'OFF'}`;
+            icon.className = autoScroll ? 'fas fa-arrow-down' : 'fas fa-pause';
+        }
+
+        // Export logs
+        function exportLogs() {
+            const data = filteredLogs.map(log => 
+                `[${formatTime(log.timestamp)}] [${log.level.toUpperCase()}] [${log.source}] ${log.message}`
+            ).join('\n');
+
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `logs_${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert(`✅ Exported ${filteredLogs.length} log entries!`);
+        }
+
+        // Clear logs
+        function clearLogs() {
+            if (confirm('Are you sure you want to clear all logs?')) {
+                logs = [];
+                filteredLogs = [];
+                renderLogs();
+                updateStats();
+            }
+        }
+
+        // Auto-scroll indicator
+        const logsContainer = document.getElementById('logsContainer');
+        const autoScrollIndicator = document.getElementById('autoScrollIndicator');
+
+        logsContainer.addEventListener('scroll', function() {
+            const isAtBottom = this.scrollTop + this.clientHeight >= this.scrollHeight - 50;
+            
+            if (!isAtBottom && autoScroll) {
+                autoScrollIndicator.classList.add('show');
+            } else {
+                autoScrollIndicator.classList.remove('show');
+            }
+        });
+
+        // Click indicator to scroll to bottom
+        autoScrollIndicator.addEventListener('click', function() {
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            this.classList.remove('show');
+        });
+
+        // Initialize on load
+        window.onload = function() {
+            init();
+            console.log('🚀 Real-time Logs Viewer initialized!');
+            console.log('Streaming logs every 2 seconds...');
+        };
+    </script>
+</body>
+</html>
