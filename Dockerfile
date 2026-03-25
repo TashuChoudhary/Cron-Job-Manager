@@ -24,15 +24,6 @@ COPY --from=builder /app/frontend ./frontend
 
 EXPOSE 5000
 
-ENV PORT=5000
-ENV AUTH_REQUIRED=false
-ENV DB_HOST=localhost
-ENV DB_PORT=5432
-ENV DB_USER=postgres
-ENV DB_PASSWORD=jobs294
-ENV DB_NAME=cronjob_manager
-ENV DB_SSLMODE=disable
-
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/v1/health || exit 1
 

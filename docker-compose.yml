@@ -9,7 +9,7 @@ services:
       - "5433:5432"
     environment:
       - POSTGRES_USER=${DB_USER:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-jobs294}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
       - POSTGRES_DB=${DB_NAME:-cronjob_manager}
       - POSTGRES_INITDB_ARGS="-E UTF8"
     volumes:
