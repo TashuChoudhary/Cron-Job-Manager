@@ -19,11 +19,11 @@ func InitDatabase() {
 		log.Printf("Warning: Error loading .env file: %v", err)
 	}
 
-	host := getEnv("DB_HOST", "localhost")
-	port := getEnv("DB_PORT", "5432")
-	user := getEnv("DB_USER", "postgres")
-	password := getEnv("DB_PASSWORD", "jobs294")
-	dbname := getEnv("DB_NAME", "cronjob_manager")
+	host := getEnvRequired("DB_HOST")
+	port := getEnvRequired("DB_PORT")
+	user := getEnvRequired("DB_USER")
+	password := getEnvRequired("DB_PASSWORD")
+	dbname := getEnvRequired("DB_NAME")
 	sslmode := getEnv("DB_SSLMODE", "disable")
 
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -58,4 +58,12 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func getEnvRequired(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		log.Fatalf("FATAL: Required environment variable %s is not set!", key)
+	}
+	return value
 }

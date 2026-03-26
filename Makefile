@@ -50,33 +50,33 @@ lint: ## Run linter
 
 docker-build: ## Build Docker images
 	@echo "$(BLUE)Building Docker images...$(NC)"
-	docker-compose -f docker-compose.production.yml build --no-cache
+	docker-compose -f docker-compose.yml build --no-cache
 
 docker-up: ## Start Docker containers
 	@echo "$(BLUE)Starting Docker containers...$(NC)"
-	docker-compose -f docker-compose.production.yml up -d
+	docker-compose -f docker-compose.yml up -d
 	@echo "$(GREEN)Containers started!$(NC)"
 	@echo "App: http://localhost:5000"
 	@echo "Logs: make docker-logs"
 
 docker-down: ## Stop Docker containers (keeps data)
 	@echo "$(BLUE)Stopping Docker containers...$(NC)"
-	docker-compose -f docker-compose.production.yml down
+	docker-compose -f docker-compose.yml down
 	@echo "$(GREEN)Containers stopped. Data preserved in volumes.$(NC)"
 
 docker-restart: ## Restart Docker containers
 	@echo "$(BLUE)Restarting Docker containers...$(NC)"
-	docker-compose -f docker-compose.production.yml restart
+	docker-compose -f docker-compose.yml restart
 
 docker-logs: ## View Docker logs (follow mode)
-	docker-compose -f docker-compose.production.yml logs -f
+	docker-compose -f docker-compose.yml logs -f
 
 docker-clean: ## Stop containers and remove volumes (⚠️ DELETES ALL DATA!)
 	@echo "$(RED)WARNING: This will delete all data in Docker volumes!$(NC)"
 	@read -p "Are you sure? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		docker-compose -f docker-compose.production.yml down -v; \
+		docker-compose -f docker-compose.yml down -v; \
 		echo "$(GREEN)Containers and volumes removed.$(NC)"; \
 	else \
 		echo "$(YELLOW)Cancelled.$(NC)"; \
@@ -114,7 +114,7 @@ db-reset: ## Reset database (⚠️ DELETES ALL DATA!)
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		docker exec cronjob-postgres psql -U postgres -c "DROP DATABASE IF EXISTS cronjob_manager;"; \
 		docker exec cronjob-postgres psql -U postgres -c "CREATE DATABASE cronjob_manager;"; \
-		docker-compose -f docker-compose.production.yml restart postgres; \
+		docker-compose -f docker-compose.yml restart postgres; \
 		echo "$(GREEN)Database reset complete!$(NC)"; \
 	else \
 		echo "$(YELLOW)Cancelled.$(NC)"; \
@@ -134,7 +134,7 @@ deploy-render: ## Deploy to Render.com (requires render CLI)
 
 status: ## Show container status
 	@echo "$(BLUE)Container Status:$(NC)"
-	@docker-compose -f docker-compose.production.yml ps
+	@docker-compose -f docker-compose.yml ps
 
 health: ## Check health of all services
 	@echo "$(BLUE)Service Health:$(NC)"
