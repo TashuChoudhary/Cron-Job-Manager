@@ -79,11 +79,11 @@ func performStartupHealthChecks() {
 	}
 }
 
-func gracefulShutdown() {
-	log.Println("🛑 Shutting down gracefully...")
-	log.Println("🔔 Allowing notification service to finish pending notifications...")
-	log.Println("✅ Shutdown complete")
-}
+//func gracefulShutdown() {
+//	log.Println("🛑 Shutting down gracefully...")
+//	log.Println("🔔 Allowing notification service to finish pending notifications...")
+//	log.Println("✅ Shutdown complete")
+//}
 
 func main() {
 	loadEnvironmentVariables()
@@ -140,7 +140,7 @@ func main() {
 	adminUser.HandleFunc("/jobs/{id:[0-9]+}", handlers.UpdateJobHandler).Methods("PUT")
 	adminUser.HandleFunc("/jobs/{id:[0-9]+}/trigger", handlers.TriggerJobHandler).Methods("POST")
 
-	// ✅ CHANGE 4: Replace AdminMiddleware with ConditionalAdminMiddleware
+	// Replace AdminMiddleware with ConditionalAdminMiddleware
 	admin := protected.PathPrefix("").Subrouter()
 	admin.Use(middleware.ConditionalAdminMiddleware)
 	admin.HandleFunc("/jobs/{id:[0-9]+}", handlers.DeleteJobHandler).Methods("DELETE")
