@@ -25,6 +25,10 @@ func GetJobsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if jobs == nil {
+		jobs = []models.Job{}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(jobs)
 }
@@ -34,36 +38,52 @@ func CreateJobHandler(w http.ResponseWriter, r *http.Request) {
 	var job models.Job
 	err := json.NewDecoder(r.Body).Decode(&job)
 	if err != nil {
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Invalid JSON data"})
 		return
 	}
 
 	if job.Name == "" || job.CronExpression == "" || job.Command == "" {
-		http.Error(w, "Missing required fields: name, cron_expression, command", http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Missing required fields: name, cron_expression, command"})
 		return
 	}
 
 	// Validate cron expression format
 	cronFields := strings.Fields(job.CronExpression)
-	if len(cronFields) != 6 {
-		http.Error(w, "Cron expression must have 6 fields", http.StatusBadRequest)
+	if len(cronFields) != 5 && len(cronFields) != 6 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Cron expression must have 5 or 6 fields"})
 		return
 	}
 
-	// Test cron expression
-	testCron := cron.New(cron.WithSeconds())
+	var testCron *cron.Cron
+	if len(cronFields) == 6 {
+		testCron = cron.New(cron.WithSeconds())
+	} else {
+		testCron = cron.New()
+	}
 	_, err = testCron.AddFunc(job.CronExpression, func() {})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid cron expression: %v", err), http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"message": fmt.Sprintf("Invalid cron expression: %v", err)})
 		return
 	}
 
 	err = services.CreateJob(&job)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
-			http.Error(w, "Job name already exists", http.StatusConflict)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Job name already exists"})
 		} else {
-			http.Error(w, "Error creating job", http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Error creating job"})
 		}
 		return
 	}

@@ -42,6 +42,8 @@ func InitDatabase() {
 
 	log.Println("✅ Successfully connected to PostgreSQL database!")
 
+	initSchema()
+
 }
 
 // CloseDatabase closes the database connection
@@ -66,4 +68,18 @@ func getEnvRequired(key string) string {
 		log.Fatalf("FATAL: Required environment variable %s is not set!", key)
 	}
 	return value
+}
+
+func initSchema() {
+	// Read the existing init.sql file embedded in the Docker image
+	sqlBytes, err := os.ReadFile("./docker/postgres/init.sql")
+	if err != nil {
+		log.Printf("⚠️  Could not read init.sql: %v (skipping schema init)", err)
+		return
+	}
+
+	if _, err := DB.Exec(string(sqlBytes)); err != nil {
+		log.Fatalf("❌ Schema initialization failed: %v", err)
+	}
+	log.Println("✅ Schema initialized from init.sql successfully")
 }

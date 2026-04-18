@@ -116,8 +116,8 @@ function isAuthConfigured() {
 }
 // Configuration
 const CONFIG = {
-    API_BASE: 'http://localhost:5000/api/v1',
-    WS_URL: 'ws://localhost:5000/ws',
+    API_BASE: `${window.location.protocol}//${window.location.host}/api/v1`,
+    WS_URL: `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws`,
     REFRESH_INTERVAL: 5000,
     CHART_UPDATE_INTERVAL: 2000,
     MAX_ACTIVITY_ITEMS: 20,

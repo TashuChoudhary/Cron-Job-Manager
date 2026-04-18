@@ -29,7 +29,7 @@ func GetAllJobs() ([]models.Job, error) {
 	}
 	defer rows.Close()
 
-	var jobs []models.Job
+	jobs := []models.Job{}
 	for rows.Next() {
 		var job models.Job
 		var envVarsJSON string
