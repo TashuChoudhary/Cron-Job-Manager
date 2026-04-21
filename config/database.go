@@ -2,6 +2,7 @@ package config
 
 import (
 	"database/sql"
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +12,8 @@ import (
 )
 
 var DB *sql.DB
+
+var initSQL string
 
 // InitDatabase initializes the database connection
 func InitDatabase() {

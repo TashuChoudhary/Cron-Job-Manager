@@ -22,8 +22,6 @@ COPY --from=builder /app/main .
 
 COPY --from=builder /app/frontend ./frontend
 
-COPY --from=builder /app/docker/postgres/init.sql ./docker/postgres/init.sql
-
 EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
