@@ -14,25 +14,32 @@ var DB *sql.DB
 
 // InitDatabase initializes the database connection
 func InitDatabase() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Printf("Warning: Error loading .env file: %v", err)
+	godotenv.Load()
+
+	var dsn string
+
+	// Render provides DATABASE_URL — always takes priority
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		dsn = url
+		log.Println("📦 Using DATABASE_URL (Render/prod mode)")
+	} else {
+
+		host := getEnvRequired("DB_HOST")
+		port := getEnvRequired("DB_PORT")
+		user := getEnvRequired("DB_USER")
+		password := getEnvRequired("DB_PASSWORD")
+		dbname := getEnvRequired("DB_NAME")
+		sslmode := getEnv("DB_SSLMODE", "disable")
+
+		dsn = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+			host, port, user, password, dbname, sslmode)
+		log.Println("🔧 Using individual DB vars (local dev mode)")
 	}
 
-	host := getEnvRequired("DB_HOST")
-	port := getEnvRequired("DB_PORT")
-	user := getEnvRequired("DB_USER")
-	password := getEnvRequired("DB_PASSWORD")
-	dbname := getEnvRequired("DB_NAME")
-	sslmode := getEnv("DB_SSLMODE", "disable")
-
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		host, port, user, password, dbname, sslmode)
-
-	var dbErr error
-	DB, dbErr = sql.Open("postgres", psqlInfo)
-	if dbErr != nil {
-		log.Fatal("Error opening database:", dbErr)
+	var err error
+	DB, err = sql.Open("postgres", dsn)
+	if err != nil {
+		log.Fatal("Error opening database:", err)
 	}
 
 	err = DB.Ping()
