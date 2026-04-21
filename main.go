@@ -174,6 +174,10 @@ func main() {
 		}
 	}()
 
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./frontend/dashboard.html")
+	}).Methods("GET")
+
 	fs := http.FileServer(http.Dir("./frontend"))
 	router.PathPrefix("/").Handler(fs)
 
