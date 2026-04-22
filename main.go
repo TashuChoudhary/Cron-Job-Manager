@@ -8,6 +8,7 @@ import (
 
 	"cron-job-manager/config"
 	"cron-job-manager/handlers"
+	"cron-job-manager/metrics"
 	"cron-job-manager/middleware"
 	"cron-job-manager/services"
 	"cron-job-manager/utils"
@@ -112,6 +113,9 @@ func main() {
 
 	// WebSocket endpoint
 	router.HandleFunc("/ws", handlers.WebSocketHandler)
+
+	// Metrics route
+	router.Handle("/metrics", metrics.Handler())
 
 	// API routes
 	api := router.PathPrefix("/api/v1").Subrouter()

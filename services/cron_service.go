@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"cron-job-manager/config"
+	"cron-job-manager/metrics"
 	"cron-job-manager/models"
 	"cron-job-manager/utils"
 
@@ -172,6 +173,8 @@ func ExecuteJob(job models.Job) {
 func ExecuteJobWithRetry(job models.Job, retryCount int, parentExecutionID *int) {
 	log.Printf("🚀 Executing job '%s' (attempt %d/%d): %s", job.Name, retryCount+1, job.MaxRetries+1, job.Command)
 
+	metrics.RunningJobs.Inc()
+
 	TrackRunningJob(job.ID, true)
 	defer TrackRunningJob(job.ID, false)
 
@@ -314,12 +317,15 @@ func ExecuteJobWithRetry(job models.Job, retryCount int, parentExecutionID *int)
 	if status == "success" {
 		TriggerDependentJobs(job.ID)
 	}
+	metrics.RunningJobs.Dec()
+	metrics.JobExecutionsTotal.WithLabelValues(job.Name, "success").Inc() // or "failed"
+	metrics.JobExecutionDuration.WithLabelValues(job.Name).Observe(duration.Seconds())
 }
 
 // sendJobNotification sends notifications for job completion
 func sendJobNotification(job models.Job, status string, startTime, endTime time.Time, duration time.Duration, exitCode int, output, errorMessage, command string, isTimeout bool) {
 	if notificationService == nil {
-		return // Skip if notification service not available
+		return
 	}
 
 	durationStr := FormatDuration(duration) // Use the notification service's FormatDuration
