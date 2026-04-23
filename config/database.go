@@ -88,7 +88,7 @@ func initSchema() {
             id SERIAL PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             description TEXT,
-            cron_expression VARCHAR(255) NOT NULL,
+            cron_expression VARCHAR(255) NOT NULL UNIQUE,
             command TEXT NOT NULL,
             is_active BOOLEAN DEFAULT true,
             category VARCHAR(100) DEFAULT 'general',
@@ -180,7 +180,7 @@ func initSchema() {
             ('Database Backup', 'Daily backup of production database', '0 2 * * *', '/usr/local/bin/backup-db.sh', 'backup'),
             ('Cache Cleanup', 'Clear expired cache entries', '*/30 * * * *', 'redis-cli FLUSHDB', 'maintenance'),
             ('API Health Check', 'Monitor API endpoints', '*/5 * * * *', 'curl -f http://api.example.com/health', 'monitoring')
-         ON CONFLICT DO NOTHING`,
+         ON CONFLICT (name) DO NOTHING`,
 	}
 
 	for _, stmt := range statements {
