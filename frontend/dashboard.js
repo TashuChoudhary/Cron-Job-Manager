@@ -104,10 +104,10 @@ function getAuthHeaders() {
     return headers;
 }
 
-// ✅ Export AUTH_REQUIRED for other scripts to use
+//  Export AUTH_REQUIRED for other scripts to use
 window.AUTH_REQUIRED = AUTH_REQUIRED;
 
-// ✅ Helper to check if authentication is properly configured
+// Helper to check if authentication is properly configured
 function isAuthConfigured() {
     if (!AUTH_REQUIRED) return true;
     

@@ -44,3 +44,15 @@ var (
 func Handler() http.Handler {
 	return promhttp.Handler()
 }
+
+func BasicAuthHandler(username, password string, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		if !ok || u != username || p != password {
+			w.Header().Set("WWW-Authenticate", `Basic realm="metrics"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		handler.ServeHTTP(w, r)
+	})
+}

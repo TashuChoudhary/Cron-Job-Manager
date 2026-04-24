@@ -115,7 +115,7 @@ func main() {
 	router.HandleFunc("/ws", handlers.WebSocketHandler)
 
 	// Metrics route
-	router.Handle("/metrics", metrics.Handler())
+	router.Handle("/metrics", metrics.BasicAuthHandler("admin", "metrics123", metrics.Handler()))
 
 	// API routes
 	api := router.PathPrefix("/api/v1").Subrouter()
