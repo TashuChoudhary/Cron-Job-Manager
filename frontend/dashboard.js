@@ -251,7 +251,22 @@ function initializeWebSocket() {
             clearInterval(state.reconnectInterval);
             addActivityItem('info', 'Connected to real-time updates');
         };
+
+        state.ws.onmessage = (e) => {
+            try { handleWebSocketMessage(JSON.parse(e.data)); } catch(err) {}
+        };
         
+        state.ws.onclose = () => {
+            console.warn('⚠️ WebSocket disconnected');
+            updateConnectionStatus('disconnected');
+            // Reconnect with backoff: 2s, 4s, 8s, max 10s
+            const delay = Math.min(10000, (state.wsRetryDelay || 2000));
+            state.wsRetryDelay = delay * 2;
+            setTimeout(() => {
+                state.wsRetryDelay = 2000; // reset on next success 
+                initializeWebSocket();
+            }, delay);
+        };
         
     } catch (error) {
         console.error('Failed to create WebSocket:', error);
@@ -443,7 +458,7 @@ function updateDashboardStats() {
     if (runningJobsEl) {
         runningJobsEl.textContent = state.runningJobs.size;
     }
-    
+
    // Fetch real success rate from logs
 fetch(`${CONFIG.API_BASE}/logs/recent`)
     .then(r => r.json())
@@ -837,7 +852,25 @@ function generateTimeSeriesData(points, baseValue, variance) {
 }
 
 function exportReport() {
-    showNotification('📊 Export feature coming soon!', 'info');
+    fetch(`${CONFIG.API_BASE}/logs`)
+        .then(r => r.json())
+        .then(logs => {
+            if (!Array.isArray(logs) || logs.length === 0) {
+                showNotification('No log data available to export', 'info');
+                return;
+            }
+            const rows = ['Job Name,Status,Duration (ms),Executed At'];
+            logs.forEach(l => {
+                rows.push(`"${l.job_name || ''}","${l.status || ''}","${l.duration || 0}","${l.created_at || ''}"`);
+            });
+            const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `cron-report-${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            showNotification('✅ Report exported successfully!', 'success');
+        })
+        .catch(() => showNotification('❌ Failed to export report', 'error'));
 }
 
 // addWebhook now actually creates a webhook
@@ -861,7 +894,7 @@ function addWebhook() {
     showNotification(`✅ Webhook "${webhookName}" added successfully!`, 'success');
 }
 
-// ✅ FIXED: renderWebhooks function to display webhooks
+// renderWebhooks function to display webhooks
 function renderWebhooks() {
     const webhookList = document.getElementById('webhook-list');
     if (!webhookList) return;
@@ -912,7 +945,7 @@ function renderWebhooks() {
     `).join('');
 }
 
-// ✅ FIXED: toggleWebhook function
+//  toggleWebhook function
 function toggleWebhook(id, enabled) {
     const webhook = state.webhooks.find(w => w.id === id);
     if (webhook) {
@@ -921,7 +954,7 @@ function toggleWebhook(id, enabled) {
     }
 }
 
-// ✅ FIXED: deleteWebhook function
+//  deleteWebhook function
 function deleteWebhook(id) {
     const webhook = state.webhooks.find(w => w.id === id);
     if (!webhook) return;
@@ -933,7 +966,7 @@ function deleteWebhook(id) {
     }
 }
 
-// ✅ FIXED: testWebhook function  
+//  testWebhook function  
 function testWebhook(id) {
     const webhook = state.webhooks.find(w => w.id === id);
     if (!webhook) return;

@@ -7,10 +7,15 @@
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="animations.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cronstrue/dist/cronstrue.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
 </head>
 <body>
+    <!-- delete this after changing to other platform -->
+    <div id="startup-banner" style="display:none; position:fixed; top:0; left:0; width:100%; background:#f59e0b; color:#fff; text-align:center; padding:12px; font-size:14px; z-index:99999; font-weight:600;">
+        ⏳ Server is warming up, please wait a few seconds...
+    </div>
     <div class="container">
         <div id="edit-modal" class="modal">
         </div>
@@ -100,7 +105,7 @@
                             <span>+5%</span>
                         </div>
                     </div>
-                    <div class="stat-value" id="success-rate">96.8%</div>
+                    <div class="stat-value" id="success-rate">-</div>
                     <div class="stat-label">Success Rate</div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: 96.8%; background: #10ac84;"></div>
@@ -134,7 +139,7 @@
                             <span>-8%</span>
                         </div>
                     </div>
-                    <div class="stat-value" id="avg-execution">2.4s</div>
+                    <div class="stat-value" id="avg-execution">-</div>
                     <div class="stat-label">Avg Execution Time</div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: 60%; background: #8b4513;"></div>
@@ -252,7 +257,8 @@
                         </div>
                         <div class="form-group">
                             <label for="job-cron">Cron Expression *</label>
-                            <input type="text" id="job-cron" placeholder="*/30 * * * * *" required>
+                            <input type="text" id="job-cron" placeholder="*/30 * * * * *" required oninput="previewCron(this.value, 'cron-preview')">
+                            <small id="cron-preview" style="display:block; margin-top:6px; color:#10ac84; min-height:16px; font-size:0.82rem;"></small>
                             <small class="form-help">
                                 Examples: <code>*/30 * * * * *</code> (every 30s), <code>0 0 9 * * *</code> (daily 9am)
                             </small>
@@ -539,7 +545,8 @@
                 </div>
                 <div class="form-group">
                     <label for="edit-job-cron">Cron Expression *</label>
-                    <input type="text" id="edit-job-cron" required>
+                    <input type="text" id="edit-job-cron" required oninput="previewCron(this.value, 'edit-cron-preview')">
+                    <small id="edit-cron-preview" style="display:block; margin-top:6px; color:#10ac84; min-height:16px; font-size:0.82rem;"></small>
                 </div>
                 <div class="form-group">
                     <label for="edit-job-command">Command *</label>
