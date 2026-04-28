@@ -9,7 +9,6 @@ const AUTH_REQUIRED = false; // Change to true to enable login requirement
         return;
     }
     
-    
     if (!AUTH_REQUIRED) {
         
         if (token) {
@@ -20,12 +19,10 @@ const AUTH_REQUIRED = false; // Change to true to enable login requirement
         return; // Exit early - no auth needed
     }
     
-    
     if (AUTH_REQUIRED && !token) {
         window.location.href = 'login.html';
         return;
     }
-    
     
     if (AUTH_REQUIRED && token) {
         fetch(`${CONFIG.API_BASE}/auth/me`, {
@@ -132,7 +129,7 @@ const state = {
     runningJobs: new Set(),
     charts: {},
     currentTab: 'overview',
-    webhooks: [] // ✅ FIXED: Added webhooks array
+    webhooks: [] //  Added webhooks array
 };
 
 // Chart.js Global Configuration
@@ -146,13 +143,11 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 CronJob Manager Pro Initializing...');
     
     initializeTabs();
-    initializeWebSocket();
     initializeCharts();
     initializeForms();
-    loadJobs();
     setupEventListeners();
     populateInitialData();
-    
+    waitForServerThenInit();
     
     const systemHealthBtn = document.querySelector('[data-tab="system-health"]');
     if (systemHealthBtn) {
@@ -165,8 +160,25 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Application Initialized');
 });
 
-
-
+async function waitForServerThenInit() {
+    const banner = document.getElementById('startup-banner');
+    if (banner) banner.style.display = 'block';
+    
+    let attempts = 0;
+    while (attempts < 20) { // max ~60 seconds
+        try {
+            const res = await fetch(`${CONFIG.API_BASE}/health`);
+            if (res.ok) break;
+        } catch(e) {}
+        await new Promise(r => setTimeout(r, 3000));
+        attempts++;
+    }
+    
+    if (banner) banner.style.display = 'none';
+    initializeWebSocket();
+    loadJobs();
+    console.log('✅ Application Initialized');
+}
 // Tab Management
 function initializeTabs() {
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -202,14 +214,14 @@ function loadTabData(tabName) {
             updatePerformanceData();
             break;
         case 'analytics':
-            updateAnalyticsData(); // ✅ FIXED: Added analytics data population
+            updateAnalyticsData(); //  Added analytics data population
             break;
         case 'monitoring':
             updateMonitoringData();
             break;
         case 'notifications':
             updateNotificationSettings();
-            renderWebhooks(); // ✅ FIXED: Render webhooks when tab opens
+            renderWebhooks(); //  Render webhooks when tab opens
             break;
         default:
             break;
@@ -347,7 +359,7 @@ async function loadJobs() {
         renderJobs();
         updateDashboardStats();
         
-        // ✅ FIX: Update performance data AFTER jobs are loaded
+        //  Update performance data AFTER jobs are loaded
         updatePerformanceData();
         updateMonitoringData();
         
@@ -375,7 +387,7 @@ async function loadJobs() {
     }
 }
 
-// ✅ FIXED: Toast now stays for 5 seconds instead of 3
+// Toast now stays for 5 seconds instead of 3
 function showNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
@@ -405,7 +417,6 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // ✅ FIXED: Remove after 10 seconds (was 3)
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => notification.remove(), 300);
@@ -433,19 +444,31 @@ function updateDashboardStats() {
         runningJobsEl.textContent = state.runningJobs.size;
     }
     
-    // Calculate success rate (you'll need actual execution history for this)
-    const successRateEl = document.getElementById('success-rate');
-    if (successRateEl) {
-        // This is placeholder - implement based on your actual data
-        successRateEl.textContent = '96.8%';
-    }
-    
-    // Update average execution time
-    const avgExecEl = document.getElementById('avg-execution');
-    if (avgExecEl) {
-        // This is placeholder - implement based on your actual data
-        avgExecEl.textContent = '2.4s';
-    }
+   // Fetch real success rate from logs
+fetch(`${CONFIG.API_BASE}/logs/recent`)
+    .then(r => r.json())
+    .then(logs => {
+        if (!Array.isArray(logs) || logs.length === 0) return;
+        const successCount = logs.filter(l => l.status === 'success').length;
+        const rate = ((successCount / logs.length) * 100).toFixed(1);
+        const successRateEl = document.getElementById('success-rate');
+        if (successRateEl) successRateEl.textContent = rate + '%';
+
+        // Update success/failure doughnut chart with real data
+        if (state.charts.success) {
+            state.charts.success.data.datasets[0].data = [parseFloat(rate), (100 - parseFloat(rate)).toFixed(1)];
+            state.charts.success.update();
+        }
+
+        // Avg execution time from logs if available
+        const withDuration = logs.filter(l => l.duration > 0);
+        if (withDuration.length > 0) {
+            const avg = (withDuration.reduce((s, l) => s + l.duration, 0) / withDuration.length / 1000).toFixed(1);
+            const avgExecEl = document.getElementById('avg-execution');
+            if (avgExecEl) avgExecEl.textContent = avg + 's';
+        }
+    })
+    .catch(() => {}); // silently fail, keep placeholders
 }
 
 function addActivityItem(type, message, details = null) {
@@ -551,7 +574,7 @@ function setupEventListeners() {
         }
     });
     
-    // ✅ FIX: Add chart control button functionality
+    // Add chart control button functionality
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('chart-btn')) {
             // Remove active class from siblings
@@ -567,8 +590,7 @@ function setupEventListeners() {
             // Show notification about what timeframe was selected
             showNotification(`📊 Chart updated to ${buttonText} view`, 'info');
             
-            // You can add actual chart update logic here
-            // For now, we'll just show it's working
+            
             console.log(`Chart timeframe changed to: ${buttonText}`);
         }
     });
@@ -580,7 +602,7 @@ function populateInitialData() {
     updateMonitoringData();
 }
 
-// ✅ FIXED: Performance tab now shows actual data
+//  Performance tab now shows actual data
 function updatePerformanceData() {
     // Top Performers - based on success rate and execution count
     const topPerformers = document.getElementById('top-performers');
@@ -687,7 +709,7 @@ function updatePerformanceData() {
     }
 }
 
-// ✅ FIXED: Analytics tab now populates with data
+//  Analytics tab now populates with data
 function updateAnalyticsData() {
     console.log('📊 Updating analytics data...');
     // Charts are already initialized, this function can trigger data refresh if needed
@@ -798,8 +820,7 @@ function refreshChartsForTab(tabName) {
 }
 
 function updateChartsWithExecutionData(payload) {
-    // Update charts with new execution data
-    // This will be implemented based on your needs
+    
     console.log('Updating charts with execution data:', payload);
 }
 
@@ -819,7 +840,7 @@ function exportReport() {
     showNotification('📊 Export feature coming soon!', 'info');
 }
 
-// ✅ FIXED: addWebhook now actually creates a webhook
+// addWebhook now actually creates a webhook
 function addWebhook() {
     const webhookUrl = prompt('Enter webhook URL:');
     if (!webhookUrl) return;
@@ -935,9 +956,10 @@ function renderJobs() {
     
     if (!state.jobs || state.jobs.length === 0) {
         container.innerHTML = `
-            <div class="loading">
-                <i class="fas fa-clipboard-list"></i>
-                No jobs found. Create your first job!
+            <div class="loading" style="padding:40px; text-align:center;">
+                <i class="fas fa-calendar-plus" style="font-size:3rem; opacity:0.3; margin-bottom:15px; display:block;"></i>
+                <div style="font-size:1.1rem; margin-bottom:8px;">No jobs yet</div>
+                <div style="font-size:0.9rem; color:#999;">Use the form on the right to create your first scheduled job</div>
             </div>
         `;
         return;
@@ -1246,6 +1268,19 @@ function filterJobs() {
         noResultsMsg.style.display = 'block';
     } else if (noResultsMsg) {
         noResultsMsg.style.display = 'none';
+    }
+}
+
+function previewCron(value, targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    if (!value || !value.trim()) { el.textContent = ''; return; }
+    try {
+        el.textContent = '→ ' + cronstrue.toString(value, { throwExceptionOnParseError: true });
+        el.style.color = '#10ac84';
+    } catch(e) {
+        el.textContent = '✗ Invalid cron expression';
+        el.style.color = '#ee5a24';
     }
 }
 
