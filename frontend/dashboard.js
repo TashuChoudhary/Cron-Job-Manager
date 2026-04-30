@@ -157,26 +157,26 @@ function setStatValue(id, value) {
 }
 
 // Initialize Application
-//document.addEventListener('DOMContentLoaded', function() {
-  //  console.log('🚀 CronJob Manager Pro Initializing...');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 CronJob Manager Pro Initializing...');
     
-  //  initializeTabs();
-    //initializeCharts();
-    //initializeForms();
-    //setupEventListeners();
-    //populateInitialData();
-    //waitForServerThenInit();
+    initializeTabs();
+    initializeCharts();
+    initializeForms();
+    setupEventListeners();
+    populateInitialData();
+    waitForServerThenInit();
     
-    //const systemHealthBtn = document.querySelector('[data-tab="system-health"]');
-    //if (systemHealthBtn) {
-      // systemHealthBtn.addEventListener('click', function(e) {
-        //   e.preventDefault();
-          //  window.open('system-health.html', '_blank');
-        //});
-    //}
+    const systemHealthBtn = document.querySelector('[data-tab="system-health"]');
+    if (systemHealthBtn) {
+       systemHealthBtn.addEventListener('click', function(e) {
+           e.preventDefault();
+           window.open('system-health.html', '_blank');
+        });
+    }
     
-    //console.log('✅ Application Initialized');
-//});
+    console.log('✅ Application Initialized');
+});
 
 async function waitForServerThenInit() {
     const banner = document.getElementById('startup-banner');
