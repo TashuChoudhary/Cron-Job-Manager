@@ -344,11 +344,15 @@ async function loadJobs() {
     
     // Show loading state
     container.innerHTML = `
-        <div class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
-            Loading jobs...
-        </div>
-    `;
+    <div>
+        ${[1,2,3].map(() => `
+            <div class="job-card-skeleton">
+                <div class="job-card-skeleton-title"></div>
+                <div class="job-card-skeleton-sub"></div>
+            </div>
+        `).join('')}
+    </div>
+`;
     
     // Add timeout
     const timeoutId = setTimeout(() => {
@@ -402,15 +406,21 @@ async function loadJobs() {
         
         // Show error with retry button
         container.innerHTML = `
-    <div>
-        ${[1,2,3].map(() => `
-            <div class="job-card-skeleton">
-                <div class="job-card-skeleton-title"></div>
-                <div class="job-card-skeleton-sub"></div>
-            </div>
-        `).join('')}
-    </div>
-`;
+        <div class="loading" style="color: #ee5a24;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div style="margin: 10px 0;">Failed to load jobs</div>
+            <small style="display: block; color: #999;">
+                ${error.message}<br><br>
+                Please ensure the server is running at:<br>
+                <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">
+                    ${CONFIG.API_BASE}
+                </code>
+            </small>
+            <button class="btn btn-primary" onclick="loadJobs()" style="margin-top: 15px;">
+                <i class="fas fa-redo"></i> Retry Connection
+            </button>
+        </div>
+    `;
     }
 }
 
