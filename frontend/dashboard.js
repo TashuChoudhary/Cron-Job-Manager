@@ -159,7 +159,8 @@ function setStatValue(id, value) {
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 CronJob Manager Pro Initializing...');
-    
+
+    showStatSkeletons();
     initializeTabs();
     initializeCharts();
     initializeForms();
