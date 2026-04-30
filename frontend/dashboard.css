@@ -1683,6 +1683,57 @@ html {
     animation: gradientAnimation 3s ease infinite;
 }
 
+/* ── Skeleton loader shimmer ── */
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.stat-skeleton {
+    display: inline-block;
+    width: 80px;
+    height: 28px;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.08) 25%,
+        rgba(255, 255, 255, 0.18) 50%,
+        rgba(255, 255, 255, 0.08) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 6px;
+    vertical-align: middle;
+}
+
+.job-card-skeleton {
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 12px;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.05) 25%,
+        rgba(255, 255, 255, 0.10) 50%,
+        rgba(255, 255, 255, 0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+
+.job-card-skeleton-title {
+    height: 16px;
+    width: 60%;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.job-card-skeleton-sub {
+    height: 12px;
+    width: 40%;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
 /* Utility Classes */
 .text-center { text-align: center; }
 .text-left { text-align: left; }

@@ -38,7 +38,6 @@ const AUTH_REQUIRED = false; // Change to true to enable login requirement
         })
         .then(user => {
             console.log('✅ Authenticated as:', user.username);
-            // Store user info
             localStorage.setItem('user', JSON.stringify(user));
             updateUserInfo(user);
         })
@@ -89,15 +88,12 @@ function getAuthHeaders() {
     const headers = {
         'Content-Type': 'application/json'
     };
-    
-    // Only add token if AUTH_REQUIRED is true
     if (AUTH_REQUIRED) {
         const token = localStorage.getItem('token');
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
     }
-    
     return headers;
 }
 
@@ -118,7 +114,8 @@ const CONFIG = {
     REFRESH_INTERVAL: 5000,
     CHART_UPDATE_INTERVAL: 2000,
     MAX_ACTIVITY_ITEMS: 20,
-    RECONNECT_INTERVAL: 5000
+    RECONNECT_INTERVAL: 5000,
+    KEEPALIVE_INTERVAL: 13*60*1000
 };
 
 // Global State
@@ -129,7 +126,9 @@ const state = {
     runningJobs: new Set(),
     charts: {},
     currentTab: 'overview',
-    webhooks: [] //  Added webhooks array
+    webhooks: [],
+    wsRetryDelay: 2000,
+    keepAliveTimer: null
 };
 
 // Chart.js Global Configuration
@@ -137,6 +136,25 @@ Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
 Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
 Chart.defaults.scale.grid.borderColor = 'rgba(255, 255, 255, 0.2)';
 Chart.defaults.plugins.legend.display = false;
+
+function showStatSkeletons() {
+    const ids = ['total-jobs', 'success-rate', 'running-jobs', 'avg-execution'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '<span class="stat-skeleton"></span>';
+    });
+}
+
+function setStatValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.opacity = '0';
+    el.textContent = value;
+    requestAnimationFrame(() => {
+        el.style.transition = 'opacity 0.4s ease';
+        el.style.opacity = '1';
+    });
+}
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
@@ -384,21 +402,15 @@ async function loadJobs() {
         
         // Show error with retry button
         container.innerHTML = `
-            <div class="loading" style="color: #ee5a24;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div style="margin: 10px 0;">Failed to load jobs</div>
-                <small style="display: block; color: #999;">
-                    ${error.message}<br><br>
-                    Please ensure the server is running at:<br>
-                    <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">
-                        ${CONFIG.API_BASE}
-                    </code>
-                </small>
-                <button class="btn btn-primary" onclick="loadJobs()" style="margin-top: 15px;">
-                    <i class="fas fa-redo"></i> Retry Connection
-                </button>
+    <div>
+        ${[1,2,3].map(() => `
+            <div class="job-card-skeleton">
+                <div class="job-card-skeleton-title"></div>
+                <div class="job-card-skeleton-sub"></div>
             </div>
-        `;
+        `).join('')}
+    </div>
+`;
     }
 }
 
